@@ -319,6 +319,7 @@ fork(void)
   release(&wait_lock);
 
   acquire(&np->lock);
+  np->musk = p->musk;
   np->state = RUNNABLE;
   release(&np->lock);
 
@@ -685,4 +686,19 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+uint64
+get_nproc()
+{
+  struct proc *p;
+  uint64 processes_count = 0;
+
+  for(p = proc; p < &proc[NPROC]; p++){
+    if(p->state != UNUSED){
+      processes_count++;
+    }
+  }
+
+  return processes_count;
 }
