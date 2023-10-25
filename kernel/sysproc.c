@@ -75,7 +75,33 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
-  return 0;
+  uint64 va;
+  int npage;
+  uint64 abits;
+
+  argaddr(0, &va);
+  argint(1, &npage);
+  argaddr(2, &abits);
+
+  if (npage > 64) {
+    return -1;
+  }
+  struct proc* p = myproc();
+  if (p == 0) {
+    return -1;
+  }
+  
+  uint64 bitmap = 0;
+  for (int i = 0; i < npage; i++) {
+    pte_t* pte = walk(p->pagetable, (va + i * PGSIZE), 0);
+    if ((pte != 0) && (*pte & PTE_A)) {
+      bitmap |= (1 << i);
+      *pte ^= PTE_A;
+    }
+  }
+  printf("sys_pgaccess: %u\n", bitmap);
+
+  return copyout(p->pagetable, abits, (char*)&bitmap, sizeof(bitmap));
 }
 #endif
 
