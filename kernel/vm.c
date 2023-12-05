@@ -315,7 +315,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   pte_t *pte;
   uint64 pa, i;
   uint flags;
-  char *mem;
+  // char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
@@ -324,13 +324,22 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+    // if((mem = kalloc()) == 0)
+    //   goto err;
+    // memmove(mem, (char*)pa, PGSIZE);
+    // if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
+    
+    // only writeable can musk COW
+    if (flags & PTE_W) {
+      flags = (flags | PTE_COW) & (~PTE_W);
+      *pte = PA2PTE(pa) | flags;
+    }
+    if(mappages(new, i, PGSIZE, (uint64)pa, flags) != 0){
+      // kfree(mem);
+      printf("uvmcopy mappages failed\n");
       goto err;
     }
+    kaddpagerefcount(pa);
   }
   return 0;
 
@@ -352,6 +361,49 @@ uvmclear(pagetable_t pagetable, uint64 va)
   *pte &= ~PTE_U;
 }
 
+pte_t *
+cowwalk(pagetable_t pagetable, uint64 va)
+{
+  if (va > MAXVA) {
+    return 0;
+  }
+  pte_t *pte;
+  if ((pte = walk(pagetable, va, 0)) == 0) {
+    return 0;
+  }
+  if (((*pte & PTE_V) == 0) || ((*pte & PTE_COW) == 0)) {
+    return 0;
+  }
+  return pte;
+}
+
+void *
+cowalloc(pagetable_t pagetable, uint64 va)
+{
+  pte_t *pte;
+  va = PGROUNDDOWN(va);
+  if ((pte = cowwalk(pagetable, va)) == 0) {
+    return 0;
+  }
+  uint64 pa = PTE2PA(*pte);
+  uint flags = PTE_FLAGS(*pte);
+  flags = (flags | PTE_W) & (~PTE_COW);
+  // if only one processer refered to physical page, then only change flags
+  if (kgetpagerefcount(pa) == 1) {
+    *pte = PA2PTE(pa) | flags;
+  } else {
+    char* mem = kalloc();
+    if(mem == 0)
+      return 0;
+    memmove(mem, (char*)pa, PGSIZE);
+    *pte = PA2PTE(mem) | flags;
+    // need to release page reference count
+    kfree((void*)pa);
+    pa = (uint64)mem;
+  }
+  return (void*)pa;
+}
+
 // Copy from kernel to user.
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
@@ -362,6 +414,11 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
   pte_t *pte;
 
   while(len > 0){
+    // cow page need alloc new physical page
+    if (cowalloc(pagetable, dstva) < 0) {
+      return -1;
+    }
+
     va0 = PGROUNDDOWN(dstva);
     if(va0 >= MAXVA)
       return -1;
