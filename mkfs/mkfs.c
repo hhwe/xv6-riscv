@@ -20,9 +20,9 @@
 // Disk layout:
 // [ boot block | sb block | log | inode blocks | free bit map | data blocks ]
 
-int nbitmap = FSSIZE/(BSIZE*8) + 1;
-int ninodeblocks = NINODES / IPB + 1;
-int nlog = LOGSIZE;
+int nbitmap = FSSIZE/(BSIZE*8) + 1; // 2000 / (1024 * 8) + 1 = 1;
+int ninodeblocks = NINODES / IPB + 1; // 200 / 16 + 1 = 13
+int nlog = LOGSIZE; // 30
 int nmeta;    // Number of meta blocks (boot, sb, nlog, inode, bitmap)
 int nblocks;  // Number of data blocks
 
@@ -90,8 +90,8 @@ main(int argc, char *argv[])
     die(argv[1]);
 
   // 1 fs block = 1 disk sector
-  nmeta = 2 + nlog + ninodeblocks + nbitmap;
-  nblocks = FSSIZE - nmeta;
+  nmeta = 2 + nlog + ninodeblocks + nbitmap; // 2 + 30 + 13 + 1 = 46
+  nblocks = FSSIZE - nmeta; // 2000 - 46 = 1954
 
   sb.magic = FSMAGIC;
   sb.size = xint(FSSIZE);

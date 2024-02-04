@@ -36,10 +36,10 @@ struct dinode {
   short nlink;          // Number of links to inode in file system
   uint size;            // Size of file (bytes)
   uint addrs[NDIRECT+1];   // Data block addresses
-};
+}; // sizeof(dinode) = 64
 
 // Inodes per block.
-#define IPB           (BSIZE / sizeof(struct dinode))
+#define IPB           (BSIZE / sizeof(struct dinode)) // 1024 / 64 = 16
 
 // Block containing inode i
 #define IBLOCK(i, sb)     ((i) / IPB + sb.inodestart)
@@ -56,5 +56,5 @@ struct dinode {
 struct dirent {
   ushort inum;
   char name[DIRSIZ];
-};
+}; // sizeof(dirent) = 16
 
