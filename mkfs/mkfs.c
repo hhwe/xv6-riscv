@@ -1,3 +1,7 @@
+/*
+ * 生成vx6文件系统镜像文件
+ * mkfs/mkfs fs.img README user/_cat user/_echo user/_forktest user/_grep user/_init user/_kill user/_ln user/_ls user/_mkdir user/_rm user/_sh user/_stressfs user/_usertests user/_grind user/_wc user/_zombie 
+ */
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -85,6 +89,7 @@ main(int argc, char *argv[])
   assert((BSIZE % sizeof(struct dinode)) == 0);
   assert((BSIZE % sizeof(struct dirent)) == 0);
 
+  // 打开要写入镜像文件
   fsfd = open(argv[1], O_RDWR|O_CREAT|O_TRUNC, 0666);
   if(fsfd < 0)
     die(argv[1]);
@@ -93,6 +98,7 @@ main(int argc, char *argv[])
   nmeta = 2 + nlog + ninodeblocks + nbitmap;
   nblocks = FSSIZE - nmeta;
 
+  // sb维护文件系统镜像结构
   sb.magic = FSMAGIC;
   sb.size = xint(FSSIZE);
   sb.nblocks = xint(nblocks);
@@ -102,26 +108,30 @@ main(int argc, char *argv[])
   sb.inodestart = xint(2+nlog);
   sb.bmapstart = xint(2+nlog+ninodeblocks);
 
+  // nmeta 46 (boot, super, log blocks 30 inode blocks 13, bitmap blocks 1) blocks 1954 total 2000
   printf("nmeta %d (boot, super, log blocks %u inode blocks %u, bitmap blocks %u) blocks %d total %d\n",
          nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
 
   freeblock = nmeta;     // the first free block that we can allocate
 
+  // 清空镜像文件
   for(i = 0; i < FSSIZE; i++)
     wsect(i, zeroes);
 
+  // 第2个block写入superblock
   memset(buf, 0, sizeof(buf));
   memmove(buf, &sb, sizeof(sb));
   wsect(1, buf);
 
+  // 分配一个目录类型inode，写入superblock
   rootino = ialloc(T_DIR);
   assert(rootino == ROOTINO);
-
+  // rootino关联"."
   bzero(&de, sizeof(de));
   de.inum = xshort(rootino);
   strcpy(de.name, ".");
   iappend(rootino, &de, sizeof(de));
-
+  // rootino关联".."
   bzero(&de, sizeof(de));
   de.inum = xshort(rootino);
   strcpy(de.name, "..");
@@ -147,19 +157,22 @@ main(int argc, char *argv[])
     if(shortname[0] == '_')
       shortname += 1;
 
+    // 分配一个文件类型inode
     inum = ialloc(T_FILE);
 
+    // 关联到目录inode
     bzero(&de, sizeof(de));
     de.inum = xshort(inum);
     strncpy(de.name, shortname, DIRSIZ);
     iappend(rootino, &de, sizeof(de));
-
+    // 关联到文件inode
     while((cc = read(fd, buf, sizeof(buf))) > 0)
       iappend(inum, buf, cc);
 
     close(fd);
   }
 
+  // 对齐rootino的size
   // fix size of root inode dir
   rinode(rootino, &din);
   off = xint(din.size);
@@ -172,6 +185,7 @@ main(int argc, char *argv[])
   exit(0);
 }
 
+// 将 buf 写入到第 sec 个 block
 void
 wsect(uint sec, void *buf)
 {
@@ -181,6 +195,7 @@ wsect(uint sec, void *buf)
     die("write");
 }
 
+// 将 ip 写入到第 inum 个 inode
 void
 winode(uint inum, struct dinode *ip)
 {
@@ -217,6 +232,7 @@ rsect(uint sec, void *buf)
     die("read");
 }
 
+// 分配inode，并返回inode，通过freeinode往后累加
 uint
 ialloc(ushort type)
 {
@@ -237,18 +253,19 @@ balloc(int used)
   uchar buf[BSIZE];
   int i;
 
-  printf("balloc: first %d blocks have been allocated\n", used);
+  printf("balloc: first %d blocks have been allocated\n", used); // 742
   assert(used < BSIZE*8);
   bzero(buf, BSIZE);
   for(i = 0; i < used; i++){
     buf[i/8] = buf[i/8] | (0x1 << (i%8));
   }
-  printf("balloc: write bitmap block at sector %d\n", sb.bmapstart);
+  printf("balloc: write bitmap block at sector %d\n", sb.bmapstart); // 45
   wsect(sb.bmapstart, buf);
 }
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
+// inum个inode的addr指向block写入ap，如果不够分配一个空的block继续写入，并更新inode size
 void
 iappend(uint inum, void *xp, int n)
 {
