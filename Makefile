@@ -90,11 +90,15 @@ endif
 
 LDFLAGS = -z max-page-size=4096
 
+# 把所有.o 文件根据kernel.ld脚本链接起来生成一个kernel，ld里面配置了各种段，qemu启动kernel入口地址就在ld配置
+# ld -T 指定连接脚本 objdump -S 反汇编源码、汇编杂糅在一起 objdump -t 反汇编符号表
 $K/kernel: $(OBJS) $K/kernel.ld $U/initcode
 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) 
 	$(OBJDUMP) -S $K/kernel > $K/kernel.asm
 	$(OBJDUMP) -t $K/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $K/kernel.sym
 
+# 编译链接用户空间入口代码
+# ld -e 指定用户空间入口地址 -N 设置text、data段可读可写
 $U/initcode: $U/initcode.S
 	$(CC) $(CFLAGS) -march=rv64g -nostdinc -I. -Ikernel -c $U/initcode.S -o $U/initcode.o
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o $U/initcode.out $U/initcode.o
@@ -152,6 +156,7 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_ex\
 
 # 生成文件系统镜像
 fs.img: mkfs/mkfs README $(UPROGS)

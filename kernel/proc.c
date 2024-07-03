@@ -126,7 +126,7 @@ found:
   p->state = USED;
 
   // Allocate a trapframe page.
-  if((p->trapframe = (struct trapframe *)kalloc()) == 0){
+  if((p->trapframe = (struct trapframe *)kalloc()) == 0){ // 内核直接映射,这个PA可以直接使用,不用做mapping
     freeproc(p);
     release(&p->lock);
     return 0;
@@ -144,7 +144,7 @@ found:
   // which returns to user space.
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
-  p->context.sp = p->kstack + PGSIZE;
+  p->context.sp = p->kstack + PGSIZE; // 栈顶到栈底增长
 
   return p;
 }

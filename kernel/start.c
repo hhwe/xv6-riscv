@@ -11,7 +11,7 @@ void timerinit();
 __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 
 // a scratch area per CPU for machine-mode timer interrupts.
-uint64 timer_scratch[NCPU][5];
+uint64 timer_scratch[NCPU][5]; // 保存时间中断处理上下文地址空间，将会和用户空间寄存器惊喜那个交换
 
 // assembly code in kernelvec.S for machine-mode timer interrupt.
 extern void timervec();
@@ -40,8 +40,8 @@ start()
 
   // configure Physical Memory Protection to give supervisor mode
   // access to all of physical memory.
-  w_pmpaddr0(0x3fffffffffffffull);
-  w_pmpcfg0(0xf);
+  w_pmpaddr0(0x3fffffffffffffull); // 地址寄存器：区域地址 [0, pmpaddr0]
+  w_pmpcfg0(0xf); // 8位控制寄存器 0:R 1:W 2:X 3~4:A>>TOR 5~6:0 7:L
 
   // ask for clock interrupts.
   timerinit();

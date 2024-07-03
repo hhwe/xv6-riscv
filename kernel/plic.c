@@ -12,8 +12,8 @@ void
 plicinit(void)
 {
   // set desired IRQ priorities non-zero (otherwise disabled).
-  *(uint32*)(PLIC + UART0_IRQ*4) = 1;
-  *(uint32*)(PLIC + VIRTIO0_IRQ*4) = 1;
+  *(uint32*)(PLIC + UART0_IRQ*4) = 1; // IRQ Interrupt Request 来自设备的中断请求，描述硬件中断源的内核标识符
+  *(uint32*)(PLIC + VIRTIO0_IRQ*4) = 1; // 数值越大优先级越高, 数值相同, id越小优先级越高
 }
 
 void

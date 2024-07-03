@@ -33,11 +33,11 @@ exec(char *path, char **argv)
 
   begin_op();
 
-  if((ip = namei(path)) == 0){
+  if((ip = namei(path)) == 0){ // 通过path查找inode
     end_op();
     return -1;
   }
-  ilock(ip);
+  ilock(ip); // 上锁,如果没有cache从文件系统读取inode,后续再通过loadseg读取inode指向文件
 
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
@@ -46,7 +46,7 @@ exec(char *path, char **argv)
   if(elf.magic != ELF_MAGIC)
     goto bad;
 
-  if((pagetable = proc_pagetable(p)) == 0)
+  if((pagetable = proc_pagetable(p)) == 0) // TODO: 不使用p->pagetable?
     goto bad;
 
   // Load program into memory.
@@ -72,7 +72,7 @@ exec(char *path, char **argv)
   end_op();
   ip = 0;
 
-  p = myproc();
+  p = myproc(); // TODO: 读取当前pid.中间可能有线程切换,不需要和一开始id一样
   uint64 oldsz = p->sz;
 
   // Allocate two pages at the next page boundary.

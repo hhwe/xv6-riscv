@@ -503,3 +503,11 @@ sys_pipe(void)
   }
   return 0;
 }
+
+// returns the amount of free memory available.
+uint64
+sys_lsmem(void)
+{
+  return klsmem();
+}
+  
