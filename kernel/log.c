@@ -228,7 +228,7 @@ log_write(struct buf *b)
   }
   log.lh.block[i] = b->blockno;
   if (i == log.lh.n) {  // Add new block to log?
-    bpin(b);
+    bpin(b); // bpin防止buf被驱逐
     log.lh.n++;
   }
   release(&log.lock);

@@ -75,7 +75,7 @@ mycpu(void)
 {
   int id = cpuid();
   struct cpu *c = &cpus[id];
-  return c;
+  return c; // 使用cpu指针的地方需要保证中断关闭,否在切换cpu后,c指向之前cpu,swtch切换会context使用老的cpu,会有异常
 }
 
 // Return the current struct proc *, or zero if none.
@@ -86,7 +86,7 @@ myproc(void)
   struct cpu *c = mycpu();
   struct proc *p = c->proc;
   pop_off();
-  return p;
+  return p; // proc指针就不需要保证中断关闭,cpu切换后新的cpu依然能使用p做处理,swtch能用proc和当前cpu交换context继续运行
 }
 
 int
@@ -143,7 +143,7 @@ found:
   // Set up new context to start executing at forkret,
   // which returns to user space.
   memset(&p->context, 0, sizeof(p->context));
-  p->context.ra = (uint64)forkret;
+  p->context.ra = (uint64)forkret; // 第一次切换线程需要和fork返回一样返回到用户空间
   p->context.sp = p->kstack + PGSIZE; // 栈顶到栈底增长
 
   return p;
@@ -517,7 +517,7 @@ forkret(void)
   static int first = 1;
 
   // Still holding p->lock from scheduler.
-  release(&myproc()->lock);
+  release(&myproc()->lock); // NOTE:保证不死锁:schedule释放锁>>forkret释放锁>>sched上锁>>schedule释放锁>>schedule获取另一个proc锁
 
   if (first) {
     // File system initialization must be run in the context of a
@@ -590,8 +590,8 @@ kill(int pid)
   for(p = proc; p < &proc[NPROC]; p++){
     acquire(&p->lock);
     if(p->pid == pid){
-      p->killed = 1;
-      if(p->state == SLEEPING){
+      p->killed = 1; // 只标志位,在usertrap中处理
+      if(p->state == SLEEPING){ // 休眠中得不到调度,逻辑上无法通过wakeup唤醒,先唤醒避免虚假唤醒
         // Wake process from sleep().
         p->state = RUNNABLE;
       }

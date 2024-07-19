@@ -421,7 +421,7 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
         got_null = 1;
         break;
       } else {
-        *dst = *p;
+        *dst = *p; // dst是内核虚拟内存, p是用户物理内存, 内核虚拟内存直接映射到物理内存(kvmmake). 可以直接读取内存
       }
       --n;
       --max;

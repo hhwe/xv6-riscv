@@ -66,7 +66,7 @@ uartinit(void)
 
   // leave set-baud mode,
   // and set word length to 8 bits, no parity.
-  WriteReg(LCR, LCR_EIGHT_BITS);
+  WriteReg(LCR, LCR_EIGHT_BITS); // ERR: 不是第三个bit,因该是bit0~1=3,才是8位宽
 
   // reset and enable FIFOs.
   WriteReg(FCR, FCR_FIFO_ENABLE | FCR_FIFO_CLEAR);

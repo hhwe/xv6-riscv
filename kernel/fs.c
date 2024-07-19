@@ -202,7 +202,7 @@ ialloc(uint dev, short type)
   struct buf *bp;
   struct dinode *dip;
 
-  for(inum = 1; inum < sb.ninodes; inum++){
+  for(inum = 1; inum < sb.ninodes; inum++){ // 从1开始遍历,img也是第一个inode不用
     bp = bread(dev, IBLOCK(inum, sb));
     dip = (struct dinode*)bp->data + inum%IPB;
     if(dip->type == 0){  // a free inode
@@ -281,7 +281,7 @@ iget(uint dev, uint inum)
 struct inode*
 idup(struct inode *ip)
 {
-  acquire(&itable.lock);
+  acquire(&itable.lock); // WHY 为什么要用这个锁
   ip->ref++;
   release(&itable.lock);
   return ip;
@@ -298,7 +298,7 @@ ilock(struct inode *ip)
   if(ip == 0 || ip->ref < 1)
     panic("ilock");
 
-  acquiresleep(&ip->lock);
+  acquiresleep(&ip->lock); // WHY 为什么是休眠锁
 
   if(ip->valid == 0){
     bp = bread(ip->dev, IBLOCK(ip->inum, sb));
@@ -484,7 +484,7 @@ readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n)
     if(addr == 0)
       break;
     bp = bread(ip->dev, addr);
-    m = min(n - tot, BSIZE - off%BSIZE);
+    m = min(n - tot, BSIZE - off%BSIZE); // 按照bsize取数据
     if(either_copyout(user_dst, dst, bp->data + (off % BSIZE), m) == -1) {
       brelse(bp);
       tot = -1;
@@ -667,7 +667,7 @@ namex(char *path, int nameiparent, char *name)
     if(nameiparent && *path == '\0'){
       // Stop one level early.
       iunlock(ip);
-      return ip;
+      return ip; // 返回path父节点inode
     }
     if((next = dirlookup(ip, name, 0)) == 0){
       iunlockput(ip);
@@ -680,7 +680,7 @@ namex(char *path, int nameiparent, char *name)
     iput(ip);
     return 0;
   }
-  return ip;
+  return ip; // 返回path节点inode
 }
 
 struct inode*

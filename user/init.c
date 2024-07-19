@@ -18,7 +18,7 @@ main(void)
 
   if(open("console", O_RDWR) < 0){
     mknod("console", CONSOLE, 0);
-    open("console", O_RDWR);
+    open("console", O_RDWR); // 打开了第一个 fd = 0(stdin), 后面接着两个是1(stdout)和2(stderr) 
   }
   dup(0);  // stdout
   dup(0);  // stderr

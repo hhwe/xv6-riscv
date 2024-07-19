@@ -5,6 +5,9 @@
         "user.h": "c",
         "defs.h": "c",
         "param.h": "c",
-        "syscall.h": "c"
+        "syscall.h": "c",
+        "stat.h": "c",
+        "spinlock.h": "c",
+        "fs.h": "c"
     }
 }

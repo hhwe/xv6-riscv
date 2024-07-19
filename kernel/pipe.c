@@ -111,7 +111,7 @@ piperead(struct pipe *pi, uint64 addr, int n)
 
   acquire(&pi->lock);
   while(pi->nread == pi->nwrite && pi->writeopen){  //DOC: pipe-empty
-    if(killed(pr)){
+    if(killed(pr)){ // 先判断进程是否被kill,否在sleep后,无法真正kill掉
       release(&pi->lock);
       return -1;
     }

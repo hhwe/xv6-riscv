@@ -3,7 +3,7 @@ struct context {
   uint64 ra;
   uint64 sp;
 
-  // callee-saved
+  // callee-saved 被调用者保存寄存器要求调用者调用被调用者前后寄存器值不变,所以只需要保存被调用者寄存器
   uint64 s0;
   uint64 s1;
   uint64 s2;

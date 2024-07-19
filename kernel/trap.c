@@ -43,7 +43,7 @@ usertrap(void)
 
   // send interrupts and exceptions to kerneltrap(),
   // since we're now in the kernel.
-  w_stvec((uint64)kernelvec);
+  w_stvec((uint64)kernelvec); // RISC-V进入trap会屏蔽中断, 虽然进入kernel但是不会有中断还是用的uservec
 
   struct proc *p = myproc();
   

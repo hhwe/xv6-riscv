@@ -130,7 +130,7 @@ sys_link(void)
     return -1;
 
   begin_op();
-  if((ip = namei(old)) == 0){
+  if((ip = namei(old)) == 0){ // 此时ip可能还在内存,table未从disk读取出
     end_op();
     return -1;
   }
@@ -143,13 +143,13 @@ sys_link(void)
   }
 
   ip->nlink++;
-  iupdate(ip);
+  iupdate(ip); // 会从disk读取数据,保证ip是disk数据
   iunlock(ip);
 
-  if((dp = nameiparent(new, name)) == 0)
+  if((dp = nameiparent(new, name)) == 0) // 返回目录inode,和文件名
     goto bad;
   ilock(dp);
-  if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){
+  if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){ // dp下挂载new文件inum指向ip
     iunlockput(dp);
     goto bad;
   }
@@ -257,7 +257,7 @@ create(char *path, short type, short major, short minor)
     iunlockput(dp);
     ilock(ip);
     if(type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE))
-      return ip;
+      return ip; // WHY 文件相同返回,但是目录相同报错
     iunlockput(ip);
     return 0;
   }

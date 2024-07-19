@@ -48,7 +48,7 @@ start()
 
   // keep each CPU's hartid in its tp register, for cpuid().
   int id = r_mhartid();
-  w_tp(id);
+  w_tp(id); // 只有在machine mode才能保证获取到的tp是当前运行的cpu,后面进入S\U模式后需要保证tp不变
 
   // switch to supervisor mode and jump to main().
   asm volatile("mret");

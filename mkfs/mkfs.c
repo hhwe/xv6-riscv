@@ -160,7 +160,7 @@ main(int argc, char *argv[])
     // 分配一个文件类型inode
     inum = ialloc(T_FILE);
 
-    // 关联到目录inode
+    // 关联到目录inode,相当于创建文件目录
     bzero(&de, sizeof(de));
     de.inum = xshort(inum);
     strncpy(de.name, shortname, DIRSIZ);
