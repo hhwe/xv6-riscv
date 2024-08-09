@@ -290,7 +290,7 @@ create(char *path, short type, short major, short minor)
 
   iunlockput(dp);
 
-  return ip;
+  return ip; // 调用的地方释放锁
 
  fail:
   // something went wrong. de-allocate ip.

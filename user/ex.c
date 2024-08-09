@@ -167,6 +167,33 @@ int main(int argc, char *argv[])
         // processes are runnable. Try to ensure that, any time there are runnable processes waiting to
         // run, no cores are pausing in WFI.
         break;
+    case 8:
+        // 1. Why panic in balloc ? Can xv6 recover?
+        // 2. Why panic in ialloc ? Can xv6 recover?
+        // 3. Why doesn’t filealloc panic when it runs out of files? Why is this more common and
+        // therefore worth handling?
+        // 4. Suppose the file corresponding to ip gets unlinked by another process between sys_link
+        // ’s calls to iunlock(ip) and dirlink. Will the link be created correctly? Why or why not?
+        // 5. create makes four function calls (one to ialloc and three to dirlink) that it requires
+        // to succeed. If any doesn’t, create calls panic. Why is this acceptable? Why can’t any of
+        // those four calls fail?
+        // 6. sys_chdir calls iunlock(ip) before iput(cp->cwd), which might try to lock cp->cwd,
+        // yet postponing iunlock(ip) until after the iput would not cause deadlocks. Why not?
+        // 100
+        // 7. Implement the lseek system call. Supporting lseek will also require that you modify
+        // filewrite to fill holes in the file with zero if lseek sets off beyond f->ip->size.
+        // 8. Add O_TRUNC and O_APPEND to open, so that > and >> operators work in the shell.
+        // 9. Modify the file system to support symbolic links.
+        // 10. Modify the file system to support named pipes.
+        // 11. Modify the file and VM system to support memory-mapped files.1
+        break;
+    case 9:
+        // 1. Modify xv6’s pipe implementation to allow a read and a write to the same pipe to proceed in
+        // parallel on different cores.
+        // 2. Modify xv6’s scheduler() to reduce lock contention when different cores are looking
+        // for runnable processes at the same time.
+        // 3. Eliminate some of the serialization in xv6’s fork().
+        break;
     default:
         fprintf(2, "error id\n");
         exit(1);

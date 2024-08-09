@@ -298,7 +298,7 @@ ilock(struct inode *ip)
   if(ip == 0 || ip->ref < 1)
     panic("ilock");
 
-  acquiresleep(&ip->lock); // WHY 为什么是休眠锁
+  acquiresleep(&ip->lock); // WHY bread里也有睡眠锁,如果这个锁不是睡眠锁,其他线程就获取锁会一直占用cpu
 
   if(ip->valid == 0){
     bp = bread(ip->dev, IBLOCK(ip->inum, sb));
@@ -336,7 +336,7 @@ iunlock(struct inode *ip)
 void
 iput(struct inode *ip)
 {
-  acquire(&itable.lock);
+  acquire(&itable.lock); // WHY 使用自旋锁,后面348释放会释放,主要保护ip临界值
 
   if(ip->ref == 1 && ip->valid && ip->nlink == 0){
     // inode has no links and no other references: truncate and free.
